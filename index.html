@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIPENA - Sistem Pembelajaran & Absensi</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2><i class="fas fa-school"></i> SIPENA</h2>
+            </div>
+            <nav>
+                <button onclick="showPage('dashboard')" class="active"><i class="fas fa-home"></i> Dashboard</button>
+                <button onclick="showPage('data-master')"><i class="fas fa-database"></i> Data Master</button>
+                <button onclick="showPage('input-jadwal')"><i class="fas fa-calendar-plus"></i> Input Jadwal</button>
+                <button onclick="showPage('lihat-jadwal')"><i class="fas fa-list"></i> Lihat Jadwal</button>
+                <button onclick="showPage('matriks-jadwal')"><i class="fas fa-table"></i> Matriks Jadwal</button>
+                <button onclick="showPage('cetak-pdf')"><i class="fas fa-file-pdf"></i> Cetak Roster PDF</button>
+                <button onclick="showPage('rekap-guru')"><i class="fas fa-chart-bar"></i> Rekap Guru (Data 2)</button>
+                <button onclick="showPage('pengaturan')"><i class="fas fa-cog"></i> Logo, Kop & Pengaturan</button>
+                <button onclick="showPage('absensi')" class="btn-absensi"><i class="fas fa-camera"></i> Absensi Guru</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard -->
+            <section id="dashboard" class="page active">
+                <h1>Dashboard</h1>
+                <div class="cards">
+                    <div class="card"><h3>Total Guru</h3><p id="dash-guru">0</p></div>
+                    <div class="card"><h3>Total Kelas</h3><p id="dash-kelas">0</p></div>
+                    <div class="card"><h3>Jadwal Hari Ini</h3><p id="dash-jadwal">0</p></div>
+                </div>
+            </section>
+
+            <!-- Data Master -->
+            <section id="data-master" class="page">
+                <h1>Data Master</h1>
+                <div class="form-group">
+                    <input type="text" id="master-guru" placeholder="Nama Guru">
+                    <input type="text" id="master-kelas" placeholder="Nama Kelas (contoh: X-A)">
+                    <button onclick="tambahDataMaster()">Simpan</button>
+                </div>
+                <div id="list-data-master"></div>
+            </section>
+
+            <!-- Input Jadwal -->
+            <section id="input-jadwal" class="page">
+                <h1>Input Jadwal Pembelajaran</h1>
+                <div class="form-group">
+                    <select id="jadwal-guru"></select>
+                    <select id="jadwal-kelas"></select>
+                    <select id="jadwal-hari">
+                        <option value="Senin">Senin</option><option value="Selasa">Selasa</option>
+                        <option value="Rabu">Rabu</option><option value="Kamis">Kamis</option>
+                        <option value="Jumat">Jumat</option><option value="Sabtu">Sabtu</option>
+                    </select>
+                    <input type="time" id="jadwal-masuk">
+                    <input type="time" id="jadwal-keluar">
+                    <button onclick="simpanJadwal()">Simpan Jadwal</button>
+                </div>
+            </section>
+
+            <!-- Lihat Jadwal -->
+            <section id="lihat-jadwal" class="page">
+                <h1>Daftar Jadwal</h1>
+                <table id="tabel-jadwal">
+                    <thead><tr><th>Hari</th><th>Jam</th><th>Kelas</th><th>Guru</th><th>Aksi</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <!-- Matriks Jadwal -->
+            <section id="matriks-jadwal" class="page">
+                <h1>Matriks Jadwal</h1>
+                <select id="matriks-kelas" onchange="renderMatriks()"></select>
+                <table id="tabel-matriks" class="matriks-table">
+                    <thead><tr><th>Jam</th><th>Senin</th><th>Selasa</th><th>Rabu</th><th>Kamis</th><th>Jumat</th><th>Sabtu</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <!-- Cetak PDF -->
+            <section id="cetak-pdf" class="page">
+                <h1>Cetak Roster PDF</h1>
+                <button onclick="generatePDF()" class="btn-primary"><i class="fas fa-download"></i> Download Roster PDF</button>
+                <div id="pdf-preview"></div>
+            </section>
+
+            <!-- Rekap Guru (DATA 2) -->
+            <section id="rekap-guru" class="page">
+                <h1>Rekapitulasi Kehadiran Guru (DATA 2)</h1>
+                <p style="margin-bottom: 15px; color: #64748b;">Data ini diperbarui otomatis setiap kali guru melakukan absensi.</p>
+                <table id="tabel-rekap">
+                    <thead>
+                        <tr>
+                            <th>Nama Guru</th>
+                            <th>Total Jam Mengajar</th>
+                            <th>Jumlah Tidak Hadir</th>
+                            <th>Jumlah Hadir</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button onclick="downloadRekapCSV()" class="btn-secondary" style="margin-top: 15px;"><i class="fas fa-file-csv"></i> Download Rekap CSV</button>
+            </section>
+
+            <!-- Pengaturan -->
+            <section id="pengaturan" class="page">
+                <h1>Pengaturan Aplikasi</h1>
+                <div class="form-group">
+                    <label>URL Google Apps Script (Wajib)</label>
+                    <input type="text" id="setting-gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+                    <label>URL Logo Sekolah (untuk PDF)</label>
+                    <input type="text" id="setting-logo" placeholder="https://.../logo.png">
+                    <label>Teks Kop Surat</label>
+                    <input type="text" id="setting-kop" placeholder="PEMERINTAH KABUPATEN ...">
+                    <button onclick="simpanPengaturan()">Simpan Pengaturan</button>
+                </div>
+            </section>
+
+            <!-- Absensi Guru -->
+            <section id="absensi" class="page">
+                <h1>Absensi Guru Mengajar</h1>
+                <div class="absensi-container">
+                    <div class="form-group">
+                        <select id="absen-guru" onchange="cekJadwalAbsen()"></select>
+                        <select id="absen-kelas" onchange="cekJadwalAbsen()"></select>
+                        <div id="status-jadwal" class="status-box">Pilih Guru dan Kelas untuk mengecek jadwal.</div>
+                    </div>
+                    
+                    <div id="form-absen" style="display:none;">
+                        <div class="camera-box">
+                            <video id="camera-preview" autoplay playsinline></video>
+                            <canvas id="camera-canvas" style="display:none;"></canvas>
+                            <img id="photo-output" style="display:none; max-width: 100%; margin-top: 10px;">
+                            <button type="button" onclick="ambilFoto()" class="btn-secondary">📸 Ambil Selfie</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Lokasi GPS:</label>
+                            <input type="text" id="absen-lokasi" readonly placeholder="Mengambil lokasi...">
+                            <button type="button" onclick="dapatkanLokasi()" class="btn-secondary">📍 Dapatkan Lokasi</button>
+                        </div>
+                        <input type="hidden" id="absen-foto-base64">
+                        <button onclick="kirimAbsensi()" class="btn-success">Kirim Absensi</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
